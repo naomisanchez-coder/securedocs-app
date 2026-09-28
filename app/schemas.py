@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 # Esquemas de Autenticación
@@ -16,6 +16,8 @@ class TokenResponse(BaseModel):
 
 # Esquema para Atributos del Usuario (ABAC + RBAC)
 class UsuarioSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     nombre: str
     correo: EmailStr
@@ -26,20 +28,19 @@ class UsuarioSchema(BaseModel):
     tipo_contrato: str
     estado: str
 
-    class Config:
-        from_attributes = True
-
 
 # Esquema para Atributos del Recurso / Documento (ABAC)
 class DocumentoCreate(BaseModel):
     titulo: str
     descripcion: Optional[str] = None
     departamento_id: int
-    nivel_confidencialidad: int  # 1 a 5
+    nivel_confidencialidad: int
     pais: str = "PERU"
 
 
 class DocumentoSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     titulo: str
     descripcion: Optional[str] = None
@@ -50,14 +51,11 @@ class DocumentoSchema(BaseModel):
     pais: str
     fecha_creacion: datetime
 
-    class Config:
-        from_attributes = True
-
 
 # Contexto de Entorno (Entorno ABAC)
 class ContextoEntorno(BaseModel):
-    hora: str  # Formato "HH:MM"
+    hora: str
     fecha: str
     direccion_ip: str
-    ubicacion: str  # Ej: "PERU"
-    dispositivo: str  # Ej: "CORPORATIVO", "PERSONAL"
+    ubicacion: str
+    dispositivo: str

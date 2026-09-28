@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import List, Optional
 from fastapi import Depends, Header, HTTPException, Request, status, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from app.auth import create_access_token, get_current_user, verify_password
@@ -24,7 +26,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Configuración de CORS
+# Configuración de CORS para permitir la conexión desde el Frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,6 +34,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Montar la carpeta 'static' para servir el Frontend HTML/JS
+app.mount("/static", StaticFiles(directory="static", html=True), name="static")
+
+
+# Redirección automática de la raíz '/' al Frontend
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse(url="/static/")
 
 
 # Helper para capturar el entorno ABAC desde cabeceras HTTP o valores por defecto
@@ -84,7 +95,6 @@ def listar_usuarios(
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(get_current_user),
 ):
-    # Verificación de RBAC para ver usuarios / administrar
     if not RBACEngine.verificar_permiso(usuario_actual, "GESTIONAR_USUARIOS", db):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -192,7 +202,6 @@ def consultar_documento(
             status_code=status.HTTP_404_NOT_FOUND, detail="Documento no encontrado"
         )
 
-    # Evaluación combinada RBAC + ABAC
     permitido, motivo = AuthorizationEngine.evaluar_solicitud(
         usuario=usuario_actual,
         operacion="CONSULTAR_DOCUMENTO",
